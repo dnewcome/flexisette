@@ -26,7 +26,7 @@ autoplace:
 
 # Unit tests for the tooling (the autoplacer core).
 test:
-	@node --test tests/
+	@node --test tests/*.test.mjs
 
 help:
 	@grep -E '^#   make' $(MAKEFILE_LIST) | sed 's/^# //'
