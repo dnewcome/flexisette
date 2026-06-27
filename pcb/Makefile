@@ -18,7 +18,15 @@ FILE    ?= index.circuit.tsx
 MODS    ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help dev build modules outline routecheck freeroute sweep module pinmap render export clean
+.PHONY: help dev build modules outline routecheck freeroute autoplace test sweep module pinmap render export clean
+
+# Autoplace the subcircuit blocks (anneal HPWL under outline/cutout/courtyard gates).
+autoplace:
+	@node scripts/autoplace.mjs $(FILE) $(AP)
+
+# Unit tests for the tooling (the autoplacer core).
+test:
+	@node --test tests/
 
 help:
 	@grep -E '^#   make' $(MAKEFILE_LIST) | sed 's/^# //'
