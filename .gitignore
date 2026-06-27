@@ -18,6 +18,16 @@
 # tool-installed agent skills (scaffolded by `tsci init`)
 **/.agents/
 
+# KiCad cruft
+_autosave-*
+~*.lck
+*.lck
+*.kicad_prl
+*-backups/
+fp-info-cache
+# stray per-module KiCad exports (only the top-level board is tracked)
+pcb/modules/*.kicad_pcb
+
 # logs / os cruft
 *.log
 .DS_Store
