@@ -45,13 +45,13 @@ export default () => (
     <trace from=".power .C_OUT .pin1" to="net.V3V3" /><trace from=".power .C_OUT .pin2" to="net.GND" />
     <trace from=".mcu .C_BULK .pin1" to="net.V3V3" /><trace from=".mcu .C_BULK .pin2" to="net.GND" />
     <trace from=".audio .C3 .pin1" to="net.V3V3" /><trace from=".audio .C3 .pin2" to="net.GND" />
-    <trace from=".display .J_OLED .VCC" to="net.V3V3" /><trace from=".display .J_OLED .GND" to="net.GND" />
+    <trace from=".display .OLED .VCC" to="net.V3V3" /><trace from=".display .OLED .GND" to="net.GND" />
 
     {/* ---- inter-block signal buses: chip-to-board-net (merge_nets.py reconciles the name fragments) ---- */}
     <trace from=".power .USBC .A6" to="net.USB_DP" /><trace from=".mcu .U1 .IO20" to="net.USB_DP" />
     <trace from=".power .USBC .A7" to="net.USB_DM" /><trace from=".mcu .U1 .IO19" to="net.USB_DM" />
-    <trace from=".mcu .U1 .IO8" to="net.SDA" /><trace from=".display .J_OLED .SDA" to="net.SDA" />
-    <trace from=".mcu .U1 .IO9" to="net.SCL" /><trace from=".display .J_OLED .SCL" to="net.SCL" />
+    <trace from=".mcu .U1 .IO8" to="net.SDA" /><trace from=".display .OLED .SDA" to="net.SDA" />
+    <trace from=".mcu .U1 .IO9" to="net.SCL" /><trace from=".display .OLED .SCL" to="net.SCL" />
     <trace from=".mcu .U1 .IO5" to="net.BCK" /><trace from=".audio .U2 .BCLK" to="net.BCK" />
     <trace from=".mcu .U1 .IO6" to="net.WS" /><trace from=".audio .U2 .LRCLK" to="net.WS" />
     <trace from=".mcu .U1 .IO7" to="net.DIN" /><trace from=".audio .U2 .DIN" to="net.DIN" />
