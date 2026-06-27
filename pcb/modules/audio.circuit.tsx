@@ -14,13 +14,12 @@ export const AudioBlock = ({ name = "audio", pcbX = 0, pcbY = 0 }: any) => (
     <MAX98357AETE_T name="U2" pcbX={0} pcbY={0} />
     {/* VDD decoupling */}
     <capacitor name="C3" capacitance="10uF" footprint="0805" pcbX={-5} pcbY={4} />
-    <capacitor name="C2" capacitance="100nF" footprint="0402" pcbX={-5} pcbY={1} />
+    {/* VDD bypass — right of U2, clear of J_I2S pin6 and the C3 bulk cap */}
+    <capacitor name="C2" capacitance="100nF" footprint="0402" pcbX={3} pcbY={4} />
     {/* SD_MODE pulldown — amp off at boot until the MCU drives it high (=Left) */}
     <resistor name="R3" resistance="100k" footprint="0402" pcbX={-5} pcbY={-3} />
 
-    {/* I2S + SD enable from MCU */}
-    <pinheader name="J_I2S" pinCount={6} footprint="pinrow6" pcbX={-11} pcbY={0}
-      pinLabels={{ pin1: "V3V3", pin2: "GND", pin3: "BCK", pin4: "WS", pin5: "DIN", pin6: "SD" }} />
+    {/* (breakout header J_I2S removed — I2S routes from the MCU via named nets) */}
     {/* speaker out (2-pin JST; pin1/pin2 = contacts) */}
     <JstPH name="J_SPK" pcbX={9} pcbY={0} />
 
@@ -31,13 +30,12 @@ export const AudioBlock = ({ name = "audio", pcbX = 0, pcbY = 0 }: any) => (
     <trace from="C3.pin1" to="net.V3V3" /><trace from="C3.pin2" to="net.GND" />
     <trace from="C2.pin1" to="net.V3V3" /><trace from="C2.pin2" to="net.GND" />
 
-    {/* I2S */}
-    <trace from="J_I2S.V3V3" to="net.V3V3" /><trace from="J_I2S.GND" to="net.GND" />
-    <trace from="J_I2S.BCK" to="U2.BCLK" /><trace from="J_I2S.WS" to="U2.LRCLK" />
-    <trace from="J_I2S.DIN" to="U2.DIN" />
-    {/* SD enable + pulldown */}
-    <trace from="J_I2S.SD" to="U2.SD_MODE" />
-    <trace from="R3.pin1" to="U2.SD_MODE" /><trace from="R3.pin2" to="net.GND" />
+    {/* I2S on GLOBAL named nets (chip pin only; top level bridges to the MCU) */}
+    <trace from="U2.BCLK" to="net.BCK" /><trace from="U2.LRCLK" to="net.WS" />
+    <trace from="U2.DIN" to="net.DIN" />
+    {/* SD enable + pulldown (amp SD_MODE on the global net.SD) */}
+    <trace from="U2.SD_MODE" to="net.SD" />
+    <trace from="R3.pin1" to="net.SD" /><trace from="R3.pin2" to="net.GND" />
 
     {/* speaker (GAIN_SLOT left floating = 9dB) */}
     <trace from="U2.OUTP" to="J_SPK.pin1" /><trace from="U2.OUTN" to="J_SPK.pin2" />

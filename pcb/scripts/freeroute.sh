@@ -1,54 +1,51 @@
 #!/usr/bin/env bash
-# freeroute.sh <board.dsn | circuit.tsx> — route a board with FREEROUTING.
+# freeroute.sh <board.dsn | circuit.tsx> — route a board with FREEROUTING (fast by default).
 #
-# THE working KiCad flow (the .ses WILL import) — 3 steps, two are GUI:
-#   1. KiCad GUI:  File > Export > Specctra DSN          -> board.dsn
-#        (headless `pcbnew.ExportSpecctraDSN` returns False — it needs the GUI app
-#         context — and `kicad-cli` has no specctra, so this step is manual.)
-#   2. bash scripts/freeroute.sh board.dsn               -> build/board.ses   (this)
-#   3. KiCad GUI:  File > Import > Specctra Session > build/board.ses
-#   KiCad's SES import ONLY accepts a session from a DSN KiCad ITSELF exported.
-#   A SES routed from tscircuit's DSN has foreign ids and WILL NOT import.
+# Back into KiCad: inject the .ses with `apply_ses_ipc.py` (IPC, headless — works with a
+# tscircuit-exported DSN, no GUI menus). The old GUI Specctra round-trip is the fallback.
 #
-# MEASUREMENT-ONLY mode (compare routers; does NOT produce an importable board):
-#   bash scripts/freeroute.sh index.circuit.tsx   # exports tscircuit DSN + routes
+# VERSION REALITY (Freerouting v2.1.0, the one that works for tscircuit DSNs):
+#   - The `-mp`/`-oit` CLI flags and `router.max_passes` in freerouting.json are IGNORED — it runs to
+#     the built-in default (9999 passes). So you CANNOT cap passes; the only bound is the wall timeout.
+#   - It writes the .ses ONLY when it CONVERGES (no improvement for a while). A routable board converges
+#     in seconds. A board it can't fully route (e.g. keepouts that strand a net) OSCILLATES forever and
+#     NEVER writes — so on a timeout you get NO .ses, only the log.
+#   - Therefore: for MEASURING a placement, run with a short MAXT and read the unrouted count from the
+#     LOG (build/freeroute.log), don't rely on the .ses. For an injectable .ses, the board must converge.
+#   - DON'T upgrade to v2.2.x for tscircuit: it needs Java 25 AND its stricter DSN parser REJECTS the
+#     tscircuit DSN ("padstack name expected at 'V3V3'"). Stay on v2.1.0 for this flow.
+#   MAXT=<wall timeout s, default 120>   (MP/OIT are passed but v2.1.0 ignores them)
 #
-# Freerouting = real maze router (ripup-retry, 45 deg). Needs freert
-# (~/.local/bin/freert, Java; override FREERT=).
+# Freerouting = real maze router (ripup-retry, 45 deg). Needs freert (~/.local/bin/freert; FREERT=).
 set -u
 cd "$(dirname "$0")/.." || exit 1
 export PATH="$HOME/.bun/bin:$PATH"
 FREERT=${FREERT:-$HOME/.local/bin/freert}
+MP=${MP:-12}; OIT=${OIT:-0}; MAXT=${MAXT:-120}
 arg=${1:-index.circuit.tsx}
 mkdir -p build; LOG=build/freeroute.log
 [ -x "$FREERT" ] || { echo "freerouting CLI not at $FREERT (set FREERT=)"; exit 1; }
 
 case "$arg" in
-  *.dsn)
-    dsn="$arg"; base=$(basename "$dsn" .dsn); mode="KiCad DSN -> importable" ;;
-  *)
-    base=$(basename "$arg" | sed -E 's/\.circuit\.tsx$//; s/\.tsx$//')
-    echo "NOTE: tscircuit DSN = completion MEASUREMENT ONLY (won't import to KiCad)."
-    echo "      For an importable board, export the DSN from KiCad and pass the .dsn."
-    timeout 200 ./node_modules/.bin/tsci export "$arg" -f specctra-dsn > "$LOG" 2>&1
-    dsn=$(ls -t *.dsn 2>/dev/null | head -1); mode="tscircuit DSN -> measurement only" ;;
+  *.dsn) dsn="$arg"; base=$(basename "$dsn" .dsn) ;;
+  *) base=$(basename "$arg" | sed -E 's/\.circuit\.tsx$//; s/\.tsx$//')
+     timeout 200 ./node_modules/.bin/tsci export "$arg" -f specctra-dsn -o "build/$base.dsn" > "$LOG" 2>&1
+     dsn="build/$base.dsn" ;;
 esac
 [ -f "$dsn" ] || { echo "no DSN found ($dsn) — see $LOG"; exit 1; }
+ses="build/$base.ses"
 
-# .dsn mode (KiCad's own DSN) -> importable .ses; .tsx mode -> ".measure.ses"
-# (a deliberately different name so it can't be mistaken for an importable file).
-case "$arg" in *.dsn) ses="build/$base.ses";; *) ses="build/$base.measure.ses";; esac
-echo "freerouting $dsn  [$mode] ..."
-JAVA_TOOL_OPTIONS="-Djava.awt.headless=true" timeout 360 "$FREERT" -de "$dsn" -do "$ses" >> "$LOG" 2>&1
-# Freerouting writes an empty "(host_version )"; KiCad's specctra parser rejects it
-# ("expecting a symbol or number" at that line). Patch so the .ses will import.
+echo "freerouting $dsn  (MP=$MP OIT=$OIT, timeout ${MAXT}s) ..."
+rm -f "$ses"
+JAVA_TOOL_OPTIONS="-Djava.awt.headless=true" timeout "$MAXT" \
+  "$FREERT" -de "$dsn" -do "$ses" -mp "$MP" -oit "$OIT" >> "$LOG" 2>&1
+rc=$?
+# Freerouting writes an empty "(host_version )" that KiCad's parser rejects; patch it.
 [ -f "$ses" ] && sed -i 's/(host_version )/(host_version "freerouting")/' "$ses"
-last=$(grep -oE 'with the score of [0-9.]+ \([^)]*\)' "$LOG" | tail -1)
-inc=$(grep -oE '"incomplete_count": *[0-9]+' "$LOG" | tail -1 | grep -oE '[0-9]+$')
-vias=$(grep -oE '"via_count": *[0-9]+' "$LOG" | tail -1 | grep -oE '[0-9]+$')
-echo "  ${last:-see $LOG}"
-echo "  unrouted: ${inc:-?}   vias: ${vias:-?}   ->  $ses"
-case "$arg" in
-  *.dsn) echo "  next: KiCad  File > Import > Specctra Session > $ses" ;;
-  *)     echo "  (measurement only — re-run on a KiCad-exported .dsn to get an importable board)" ;;
-esac
+last=$(grep -oE 'score of [0-9.]+ \([0-9]+ unrouted\)' "$LOG" | tail -1)
+echo "  ${last:-see $LOG}   (freert rc=$rc)"
+if [ -f "$ses" ]; then
+  echo "  -> $ses ($(grep -c '(wire' "$ses") wires).  Inject: python3 scripts/apply_ses_ipc.py $ses --save --clear"
+else
+  echo "  NO .ses written (rc=$rc). If it timed out at the cap, lower MP or check $LOG."
+fi

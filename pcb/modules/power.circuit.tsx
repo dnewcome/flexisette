@@ -24,7 +24,7 @@ export const PowerBlock = ({ name = "power", pcbX = 0, pcbY = 0 }: any) => (
     <via name="GV_CHG" connectsTo="net.GND" fromLayer="top" toLayer="bottom" pcbX={-7} pcbY={0} />
     <resistor name="R_PROG" resistance="2k" footprint="0402" pcbX={-7} pcbY={-5} />
     <capacitor name="C_BAT" capacitance="10uF" footprint="0805" pcbX={-3} pcbY={-5} />
-    <JstPH name="J_BAT" pcbX={-7} pcbY={7} />
+    <JstPH name="J_BAT" pcbX={19} pcbY={5} />
 
     {/* load share: D1 (USB->SYS), Q1 P-FET (BAT->SYS when USB off) */}
     <B5819W_SL name="D1" pcbX={1} pcbY={5} />
@@ -37,8 +37,7 @@ export const PowerBlock = ({ name = "power", pcbX = 0, pcbY = 0 }: any) => (
     <capacitor name="C_OUT" capacitance="1uF" footprint="0402" pcbX={11} pcbY={4} />
     <capacitor name="C5" capacitance="22uF" footprint="0805" pcbX={11} pcbY={-4} />
 
-    <pinheader name="J_PWR" pinCount={4} footprint="pinrow4" pcbX={16} pcbY={0}
-      pinLabels={{ pin1: "V3V3", pin2: "GND", pin3: "USB_DP", pin4: "USB_DM" }} />
+    {/* (breakout header J_PWR removed — V3V3/GND/USB route via named nets to the other blocks) */}
 
     {/* USB-C: VBUS, GND, shield, CC pulldowns, D+/- (both orientations tied) */}
     <trace from="USBC.A4B9" to="net.VBUS" /><trace from="USBC.B4A9" to="net.VBUS" />
@@ -71,9 +70,7 @@ export const PowerBlock = ({ name = "power", pcbX = 0, pcbY = 0 }: any) => (
     <trace from="C_OUT.pin1" to="net.V3V3" /><trace from="C_OUT.pin2" to="net.GND" />
     <trace from="C5.pin1" to="net.V3V3" /><trace from="C5.pin2" to="net.GND" />
 
-    {/* breakout */}
-    <trace from="J_PWR.V3V3" to="net.V3V3" /><trace from="J_PWR.GND" to="net.GND" />
-    <trace from="J_PWR.USB_DP" to="net.USB_DP" /><trace from="J_PWR.USB_DM" to="net.USB_DM" />
+    {/* V3V3/GND/USB are on named nets; the top level bridges them to the mcu/audio/display blocks */}
 
     <copperpour connectsTo="net.GND" layer="bottom" />
   </subcircuit>
