@@ -1,0 +1,23 @@
+# dependencies
+**/node_modules/
+
+# build / generated outputs
+**/build/
+**/dist/
+.tscircuit/
+
+# python
+**/__pycache__/
+*.pyc
+
+# generated routing files (regenerated from source)
+*.dsn
+*.ses
+*.ses.*
+
+# tool-installed agent skills (scaffolded by `tsci init`)
+**/.agents/
+
+# logs / os cruft
+*.log
+.DS_Store
