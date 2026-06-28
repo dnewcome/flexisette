@@ -24,6 +24,9 @@ mkdir -p build
 
 echo "[1/8] export placement -> $BOARD"
 $TSCI export -f kicad_pcb "$SRC" -o "$BOARD" 2>&1 | grep -iE 'exported|error:' || true
+# apply the saved round-trip floorplan (placement/<VARIANT>.json) on top of the .tsx defaults
+python3 scripts/apply_placement.py "${VARIANT:-default}" "$BOARD" 2>/dev/null \
+  || echo "  (no placement/${VARIANT:-default}.json yet — using .tsx pcbX/pcbY)"
 
 echo "[2/8] PLACEMENT GATE — parts must be INSIDE the outline (notch/cutouts) before routing"
 # tscircuit has NO keep-in: pcbX/pcbY is manual, so a part can sit in a notch / on a hole.

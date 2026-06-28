@@ -18,7 +18,7 @@ FILE    ?= index.circuit.tsx
 MODS    ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help dev build modules outline routecheck freeroute autoplace test sweep module pinmap render fit fab export clean
+.PHONY: help dev build modules outline routecheck freeroute autoplace test sweep module pinmap render fit fab place sync variant export clean
 
 # Autoplace the subcircuit blocks (anneal HPWL under outline/cutout/courtyard gates).
 autoplace:
@@ -90,6 +90,20 @@ fab:
 	cd fab && zip -q flexisette_jlcpcb.zip *.g* *.drl
 	python3 scripts/gen_bom_cpl.py
 	@echo "fab/: flexisette_jlcpcb.zip (gerbers+drill) + bom.csv + cpl.csv"
+
+# --- ROUND-TRIP FLOORPLAN LOOP (fast pre-routing placement; positions live in placement/$(VARIANT).json) ---
+# Iterate the floorplan visually: drag/rotate parts in KiCad against the ratsnest, then `make sync`.
+# Runs on a THROWAWAY board (build/floorplan.kicad_pcb) so the routed index board is never at risk.
+VARIANT ?= default
+place:          ## floorplan: export -> snap placement -> open KiCad (drag parts, then `make sync`)
+	$(TSCI) export index.circuit.tsx -f kicad_pcb -o build/floorplan.kicad_pcb
+	-python3 scripts/apply_placement.py $(VARIANT) build/floorplan.kicad_pcb
+	DISPLAY=$${DISPLAY:-:0} setsid pcbnew build/floorplan.kicad_pcb >/dev/null 2>&1 &
+	@echo "drag/rotate parts in KiCad, then: make sync VARIANT=$(VARIANT)"
+sync:           ## pull hand-moved positions from the floorplan board into placement/$(VARIANT).json
+	python3 scripts/sync_positions.py $(VARIANT) build/floorplan.kicad_pcb
+variant:        ## fork the current placement into a new release: make variant V=glow
+	cp placement/$(VARIANT).json placement/$(V).json && echo "placement/$(V).json — edit / drag + `make sync VARIANT=$(V)`"
 
 # Hand off placement + pours + ratsnest to KiCad for hand-routing.
 export:
