@@ -35,7 +35,7 @@ export default () => (
     {/* Spread across the whole board, avoiding window(0,3)/reels(±21,3)/notch(bottom-centre)/screws.
         mcu LEFT end (breakout pulled in to clear the left reel), audio RIGHT end (rotated to fit the
         narrow column), power TOP band, display in the strip just below the window. */}
-    <McuBlock name="mcu" pcbX={-40} pcbY={2} />
+    <McuBlock name="mcu" pcbX={-38} pcbY={2} />
     <PowerBlock name="power" pcbX={2} pcbY={20} />
     <AudioBlock name="audio" pcbX={24} pcbY={-9} />
     <DisplayBlock name="display" pcbX={-2} pcbY={-12} />

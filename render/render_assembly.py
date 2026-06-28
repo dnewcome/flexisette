@@ -55,7 +55,8 @@ def place(path, zmm, mat, expl=0.0):
     for p in o.data.polygons: p.use_smooth=False
     return o
 
-place(f'{B}/panel.stl', 0.0, M_PCB,   -EXPL)        # bottom = PCB stand-in (green)
+_pcb = f'{B}/pcb.stl' if os.path.exists(f'{B}/pcb.stl') else f'{B}/panel.stl'  # real board if imported
+place(_pcb, 0.0, M_PCB,   -EXPL)                    # bottom = real PCB (cad/import_pcb.py) or stand-in
 place(f'{B}/frame.stl', 1.57, M_FRAME, 0.0)         # frame
 place(f'{B}/panel.stl', 7.43, M_PANEL, +EXPL)       # top = printed panel (warm)
 

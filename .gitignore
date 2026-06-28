@@ -31,3 +31,6 @@ pcb/modules/*.kicad_pcb
 # logs / os cruft
 *.log
 .DS_Store
+
+# generated JLCPCB fab outputs (regenerate with `make fab`)
+pcb/fab/

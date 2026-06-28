@@ -18,7 +18,7 @@ FILE    ?= index.circuit.tsx
 MODS    ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help dev build modules outline routecheck freeroute autoplace test sweep module pinmap render export clean
+.PHONY: help dev build modules outline routecheck freeroute autoplace test sweep module pinmap render fit fab export clean
 
 # Autoplace the subcircuit blocks (anneal HPWL under outline/cutout/courtyard gates).
 autoplace:
@@ -73,6 +73,23 @@ render:
 	  name=$$(echo $$svg | sed 's|dist/||; s|/pcb.svg||; s|/|_|g'); \
 	  convert -background black -density 150 $$svg build/$${name}_pcb.png \
 	    && echo "wrote build/$${name}_pcb.png"; done
+
+# 3D fit-check: bring the routed board into the printed-cassette assembly + render (pcb-enclosure-fit).
+fit:
+	python3 ../cad/import_pcb.py index.circuit.kicad_pcb    # bare routed board (layer registration)
+	python3 ../cad/import_pcb.py index.circuit.tsx          # populated board (component bodies)
+	python3 ../cad/render_fit.py 6
+	@echo "wrote ../cad/build/fit_iso.png + fit_top.png + fit_pop.png"
+
+# Full JLCPCB package: Gerbers + drill (zip) + assembly BOM + CPL.
+BOARD ?= index.circuit.kicad_pcb
+fab:
+	rm -rf fab && mkdir -p fab
+	kicad-cli pcb export gerbers -o fab/ $(BOARD)
+	kicad-cli pcb export drill   -o fab/ $(BOARD)
+	cd fab && zip -q flexisette_jlcpcb.zip *.g* *.drl
+	python3 scripts/gen_bom_cpl.py
+	@echo "fab/: flexisette_jlcpcb.zip (gerbers+drill) + bom.csv + cpl.csv"
 
 # Hand off placement + pours + ratsnest to KiCad for hand-routing.
 export:
