@@ -18,7 +18,7 @@ FILE    ?= index.circuit.tsx
 MODS    ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help dev build modules outline routecheck freeroute autoplace test sweep module pinmap render fit fab place sync variant export clean
+.PHONY: help dev build modules outline routecheck freeroute autoplace untangle test sweep module pinmap render fit fab place sync variant export clean
 
 # Autoplace the subcircuit blocks (anneal HPWL under outline/cutout/courtyard gates).
 autoplace:
@@ -104,6 +104,9 @@ sync:           ## pull hand-moved positions from the floorplan board into place
 	python3 scripts/sync_positions.py $(VARIANT) build/floorplan.kicad_pcb
 variant:        ## fork the current placement into a new release: make variant V=glow
 	cp placement/$(VARIANT).json placement/$(V).json && echo "placement/$(V).json — edit / drag + `make sync VARIANT=$(V)`"
+untangle:       ## auto-orient parts: rotate each to shorten the ratsnest (gate-safe) -> placement/$(VARIANT).json
+	node scripts/untangle.mjs $(VARIANT) --write
+	@echo "now: make place VARIANT=$(VARIANT)  (eyeball + hand-tune, then route)"
 
 # Hand off placement + pours + ratsnest to KiCad for hand-routing.
 export:
