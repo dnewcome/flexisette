@@ -18,7 +18,7 @@ FILE    ?= index.circuit.tsx
 MODS    ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help dev build modules outline routecheck freeroute autoplace untangle test sweep module pinmap render fit fab place sync variant export clean
+.PHONY: help show dev build modules outline routecheck freeroute autoplace untangle test sweep module pinmap render fit fab place sync variant export clean
 
 # Autoplace the subcircuit blocks (anneal HPWL under outline/cutout/courtyard gates).
 autoplace:
@@ -73,6 +73,14 @@ render:
 	  name=$$(echo $$svg | sed 's|dist/||; s|/pcb.svg||; s|/|_|g'); \
 	  convert -background black -density 150 $$svg build/$${name}_pcb.png \
 	    && echo "wrote build/$${name}_pcb.png"; done
+
+# Open the generated artifacts (they live in build/, gitignored — real files, not committed).
+show:           ## open the latest fit renders (PNG) + print the 3D-model paths
+	-xdg-open ../cad/build/fit_top.png >/dev/null 2>&1 &
+	-xdg-open ../cad/build/fit_iso.png >/dev/null 2>&1 &
+	@echo "renders : cad/build/fit_{top,iso,pop}.png   (image viewer)"
+	@echo "3D GLB  : pcb/build/3d/flexisette_oled.glb   (drag into https://gltf-viewer.donmccurdy.com, or Blender / OS 3D viewer)"
+	@echo "STLs    : cad/build/*.stl    |    live 3D: cd pcb && tsci dev  (localhost:3020, 3D tab)"
 
 # 3D fit-check: bring the routed board into the printed-cassette assembly + render (pcb-enclosure-fit).
 fit:
