@@ -34,3 +34,8 @@ pcb/modules/*.kicad_pcb
 
 # generated JLCPCB fab outputs (regenerate with `make fab`)
 pcb/fab/
+
+# generated sim outputs (regenerate with python3 sim/.../*.py)
+sim/**/response.png
+sim/**/*.cir
+sim/**/response.dat
