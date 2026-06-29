@@ -1,38 +1,39 @@
-# speaker_reflex — bass-reflex micro-speaker sim
+# speaker_reflex — sealed face-firing micro-speaker sim
 
-Thiele-Small lumped **acoustical equivalent circuit** of the flexisette insert speaker: the slim oval
-driver + the ~6 cm³ head-insert box + the folded slot port. The enclosure *is* in the model — the box
-is an acoustic compliance (capacitor `Cab`), the folded port an acoustic mass + loss (inductor `Lmap`
-+ `Rap`). ngspice solves it; an independent numpy complex-impedance solve verifies the deck.
+Thiele-Small lumped **acoustical equivalent circuit** of the flexisette speaker. The design (decided):
+a slim **face-firing micro-driver** in a **sealed** back-volume carved from the cassette interior — the
+cassette is only 9mm thick, so a forward-firing driver through the head slot doesn't fit; lying flat and
+firing out the face does. (The model still supports a vented port; we A/B'd it and chose sealed.)
+
+The enclosure *is* the model: the box is an acoustic compliance `Cab = Vb/ρc²`. ngspice solves the
+circuit; an independent numpy complex-impedance solve verifies the deck.
 
 ```
-python3 reflex.py          # -> response.png (SPL / excursion / port velocity / impedance), reflex.cir
+python3 reflex.py        # -> sealed.png (SPL vs Vb, excursion, Fc&Qtc vs Vb, impedance), reflex.cir
 ```
 
-Representative driver T-S (Sd 1.5 cm², Fs 500 Hz, Vas 25 cm³, Qts 0.9, Re 8 Ω); box Vb 6 cm³; folded
-slot port 8×1.2 mm. **Refine with the real driver's params** — the conclusions hinge on Vas.
+**Driver: PUI Audio AS01808AO** (18×13mm, 3mm thick, 8Ω, 1W). `Fs=320 Hz` and impedance are PUBLISHED;
+`Sd, Vas, Qts, Xmax` are **ESTIMATED from the cone size — measure before finalizing** (a DATS, or a DIY
+two-resistor impedance sweep on the board's own amp). The whole "boomy vs flat" question hangs on Qts.
 
-## Verification (the deck is trustworthy)
-- ngspice vs analytic |Ud|: **0.00 %** error.
-- Sealed resonance **Fc = 1137 Hz** = `Fs·√(1+Vas/Vb)` ✓.
-- Vented electrical impedance = **twin humps with a dip at Fb ≈ 412 Hz** (the textbook ported signature) ✓.
-- LF physics: front + port cancel below Fb (acoustic short) → steep rolloff (radiated sum is `Ud − Up`, not `Ud + Up`).
+## Verification
+- sealed ngspice vs analytic |Ud|: **0.00 %**.
+- sealed impedance = single hump (vs the vented twin-hump we confirmed earlier).
 
-## Findings (representative driver — non-obvious, this is why we simulate)
-1. **At this extreme miniaturization, ported ≈ sealed.** The 6 cm³ box is ~4× smaller than the driver
-   wants (Vas/Vb ≈ 4), so the port gives only a **small bump at ~400 Hz**, paid back by a steeper
-   rolloff below it — **net ~0 dB median** vs a sealed box of the same volume. A *sealed* box may be the
-   pragmatic call (nearly as good, no folded port to tune/print) **unless the real driver's Vas is low**
-   enough to make the port clearly worthwhile. Re-run with real params before committing to the port.
-2. **The limit is EXCURSION, not power or the box.** The micro driver hits ~0.3 mm Xmax at only
-   **~13 mW**; clean output caps around **~70 dB @1m**. The MAX98357A amp has headroom the driver can't
-   use — push it and it distorts/bottoms out, it doesn't get louder cleanly. A bigger driver / more
-   volume is the only real lever for more output.
-3. **The folded port is realizable and quiet.** ~30 mm of 8×1.2 mm slot tunes 400 Hz; port air velocity
-   at clean levels is ~6 m/s, well under the ~17 m/s chuffing threshold (it only chuffs at absurd power).
+## Findings (AS01808, estimated Vas/Qts)
+1. **The real driver's low Fs (320 Hz) drops the box knee to ~450–550 Hz** — a genuine low-mid lift,
+   far below the 1.1 kHz of the pessimistic placeholder. Sealed in the cassette gives real low-mids.
+2. **Qtc is high (~1.3–2.0)** with the estimated `Qts=1.0` → a resonant **peak/boom at Fc**, not a flat
+   response. The *real* Qts decides whether that's a pleasant bump or a one-note boom — **measure it.**
+   If it's high, a touch of stuffing (raises effective Vb, lowers Qtc) or a lower-Qts driver tames it.
+3. **More back-volume always helps** (lower Fc *and* lower Qtc) — `Fc 640→413 Hz` and `Qtc 2.0→1.3` as
+   `Vb 4→18 cm³`. **Carve as much interior as possible** (~10–12 cm³ → Fc ~450 Hz); diminishing past that.
+4. **Excursion-limited, not power-limited:** ~0.7 mm @1W vs ~0.35 mm Xmax → ~**250 mW clean → ~70 dB@1m**.
+   The MAX98357A has headroom the micro driver can't use. (Absolute SPL is uncertain on estimates.)
 
 ## Next
-- Pick a real oval module, get/measure its T-S, re-run → decide **sealed vs ported** on real numbers.
-- If ported survives that, CAD the folded-port enclosure into the insert (build123d), port length as a
-  printed-and-tuned variable.
-- (TODO) emit a Falstad netlist for interactive intuition — the deck is passive RLC, imports cleanly.
+- **Measure the AS01808's T-S** (Qts especially) and re-run → lock the response / decide if stuffing is
+  needed. The DIY rig: drive the driver through a known series R off the board's amp, log V across each,
+  derive Z(f) → Fs, Qts (added-mass trick for Vas).
+- **CAD the sealed chamber** (build123d) behind the face-firing driver, sealing as much cassette
+  interior as the PCB/battery allow as back-volume; the driver lies flat (3mm) under a grille.

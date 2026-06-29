@@ -37,5 +37,6 @@ pcb/fab/
 
 # generated sim outputs (regenerate with python3 sim/.../*.py)
 sim/**/response.png
+sim/**/sealed.png
 sim/**/*.cir
 sim/**/response.dat
