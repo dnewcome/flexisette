@@ -48,7 +48,21 @@ PARTS.md    component sourcing / BOM notes
 - **Animation:** `python3 display/tape_anim.py` → a 128×64 GIF preview.
 
 The PCB workflow follows the code-driven, placement-first approach (modular subcircuits, deterministic
-placement, ground pours, then route) — see `pcb/scripts/` and `pcb/KICAD_FINISH.md`.
+placement, ground pours, then route) — see [docs/pcb-toolchain.md](docs/pcb-toolchain.md) and
+[docs/workflows.md](docs/workflows.md).
+
+## Documentation
+
+Full documentation lives in **[`docs/`](docs/)** — start with
+**[docs/architecture.md](docs/architecture.md)** for the big picture, then:
+
+- [PCB toolchain](docs/pcb-toolchain.md) · [Placement (the fast loop)](docs/placement.md) ·
+  [CAD enclosure](docs/cad-enclosure.md)
+- [3D fit-check + renders](docs/3d-fit-and-renders.md) · [Fabrication (JLCPCB)](docs/fabrication.md)
+- [Workflows — task recipes](docs/workflows.md) · [Reference — every target/script/artifact](docs/reference.md)
+- [Roadmap & known issues](docs/roadmap.md) · [Planned placement constraints](docs/placement-constraints.md)
+
+*Project started June 25, 2026.*
 
 ## License
 
