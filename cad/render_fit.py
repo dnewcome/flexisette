@@ -24,6 +24,18 @@ LAYERS = [   # (stl, z_mm, [r,g,b], explode_factor)
 ]
 
 
+WIN = (0, 3)   # tape-window centre in the render frame (board cutout + cad share it)
+
+
+def oled_lines(zbase):
+    """0.96\" SSD1306 module behind the board at the window: blue module PCB + dark screen (screen on +Z)."""
+    o, s = os.path.join(B, "oled.stl"), os.path.join(B, "oled_screen.stl")
+    if not os.path.exists(o):
+        return []
+    return [f'color([0.10,0.20,0.55]) translate([{WIN[0]},{WIN[1]},{zbase:.3f}]) import("{o}");',
+            f'color([0.04,0.04,0.07]) translate([{WIN[0]},{WIN[1]},{zbase:.3f}]) import("{s}");']
+
+
 def scad(explode):
     lines = ["$fn=48;"]
     for stl, z, c, ef in LAYERS:
@@ -31,6 +43,7 @@ def scad(explode):
         if not os.path.exists(p):
             continue
         lines.append(f'color([{c[0]},{c[1]},{c[2]}]) translate([0,0,{z + ef*explode:.3f}]) import("{p}");')
+    lines += oled_lines(LAYERS[0][1] - 4 - 2 * explode)   # OLED just behind the board (screen at the window); explodes down
     ins = os.path.join(B, "insert.stl")          # head insert: thickness->Z, head face -> -Y, front edge
     if os.path.exists(ins):
         lines.append(f'color([0.45,0.06,0.06]) translate([0,{-M.SHELL_H/2:.2f},{PCB_T:.2f}]) '

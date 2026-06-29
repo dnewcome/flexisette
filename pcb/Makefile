@@ -78,6 +78,7 @@ render:
 fit:
 	python3 ../cad/import_pcb.py index.circuit.kicad_pcb    # bare routed board (layer registration)
 	python3 ../cad/import_pcb.py index.circuit.tsx          # populated board (component bodies)
+	python3 ../cad/oled.py                                  # OLED module (no CDN 3D model — modeled here)
 	python3 ../cad/render_fit.py 6
 	@echo "wrote ../cad/build/fit_iso.png + fit_top.png + fit_pop.png"
 
