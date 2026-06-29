@@ -57,6 +57,18 @@ def place(path, zmm, mat, expl=0.0):
 
 _pcb = f'{B}/pcb.stl' if os.path.exists(f'{B}/pcb.stl') else f'{B}/panel.stl'  # real board if imported
 place(_pcb, 0.0, M_PCB,   -EXPL)                    # bottom = real PCB (cad/import_pcb.py) or stand-in
+
+# OLED 0.96" module behind the board at the tape window (no CDN 3D model -> cad/oled.py STL).
+# cad frame is Z-up like this scene; screen on +Z (faces up through the window). Verify on render.
+M_OLED   = principled('oled',  (0.04,0.07,0.22), rough=0.4)
+M_SCREEN = principled('screen',(0.02,0.02,0.03), rough=0.15, coat=0.3)
+for _stl, _mat in ((f'{B}/oled.stl', M_OLED), (f'{B}/oled_screen.stl', M_SCREEN)):
+    if not os.path.exists(_stl): continue
+    _o = imp(_stl); _o.scale=(S,S,S)
+    _o.location = (0.0, 3.0*S, -4.0*S + ZC - EXPL)  # window (0,+3mm), behind the board, screen up
+    _o.data.materials.append(_mat)
+    for _p in _o.data.polygons: _p.use_smooth=False
+
 place(f'{B}/frame.stl', 1.57, M_FRAME, 0.0)         # frame
 place(f'{B}/panel.stl', 7.43, M_PANEL, +EXPL)       # top = printed panel (warm)
 
